@@ -1,0 +1,18 @@
+﻿
+# Please enter the commit message for your changes. Lines starting
+# with '#' will be ignored, and an empty message aborts the commit.
+# On branch master
+# Your branch is up-to-date with 'origin/master'.
+#
+# Changes to be committed:
+#	modified:   PersonTracking/PersonTracking/PersonTracking.cpp
+#	deleted:    PersonTracking/include/face_tracker.h
+#	deleted:    PersonTracking/include/wheels_controller.h
+#	deleted:    PersonTracking/src/face_tracker.cpp
+#	modified:   PersonTracking/src/head_controller.cpp
+#	deleted:    PersonTracking/src/wheels_controller.cpp
+#
+# Untracked files:
+#	PersonTracking/
+#
+
