@@ -10,23 +10,45 @@
 t_head_controller::t_head_controller(void) {
 	if (connect()) {
 
-		printf("Connected...\n");
+		printf("Connected to head...\n");
 	}
 	if (setup()) {
-		printf("Setup complete...\n");
+		printf("Head setup complete...\n");
 	}
 }
 //----------------------------------------------------------------
 bool t_head_controller::connect() {
 	//connect to serial ports
-	if (!head_motors_controller.connect(3, 115200))
-	{
+	if (!head_motors_controller.connect(3, 115200)) {
 		std::cout << ("Error attaching to Jenny 5' head motors!\n");
+		return false;
 	}
 
-	jenny5_event connect_to_head_motors_event(IS_ALIVE_EVENT);
+	//jenny5_event connect_to_head_motors_event(IS_ALIVE_EVENT);
+	//return head_motors_controller.wait_for_command_completion(connect_to_head_motors_event);
 
-	return head_motors_controller.wait_for_command_completion(connect_to_head_motors_event);
+	// now wait to see if I have been connected
+	// wait for no more than 3 seconds. If it takes more it means that something is not right, so we have to abandon it
+	clock_t start_time = clock();
+
+	while (1) {
+		if (!head_motors_controller.update_commands_from_serial())
+			Sleep(5); // no new data from serial ... we make a little pause so that we don't kill the processor
+
+		if (head_motors_controller.query_for_event(IS_ALIVE_EVENT, 0)) { // have we received the event from Serial ?
+			break;
+		}
+		// measure the passed time 
+		clock_t end_time = clock();
+
+		double wait_time = (double) (end_time - start_time) / CLOCKS_PER_SEC;
+		// if more than 3 seconds then game over
+		if (wait_time > NUM_SECONDS_TO_WAIT_FOR_CONNECTION) {
+			std::cout << "Head does not respond! Game over!";
+			return false;
+		}
+	}
+	return true;
 }
 //----------------------------------------------------------------
 bool t_head_controller::setup() {

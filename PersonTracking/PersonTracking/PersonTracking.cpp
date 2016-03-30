@@ -1,5 +1,5 @@
-#include "../include/face_tracker.h"
-#include "../include/wheels_controller.h"
+#include "../include/FaceTracker.h"
+#include "../include/WheelsController.h"
 #include "../include/head_controller.h"
 #include "../include/jenny5_command_module.h"
 
@@ -10,6 +10,7 @@ using namespace cv;
 
 
 void align_with_person(int displacement_x, t_wheels_controller ctrl) {
+	displacement_x = displacement_x / 1.8 * 16.0;
 	if (displacement_x > 0) {
 		ctrl.turn_left(displacement_x, WHEELS_MOVING);
 	} else if (displacement_x < 0) {
@@ -18,6 +19,7 @@ void align_with_person(int displacement_x, t_wheels_controller ctrl) {
 }
 
 void align_head(int displacement_y, t_head_controller ctrl) {
+	displacement_y = displacement_y / 1.8 * 16.0;
 	if (displacement_y > 0) {
 		ctrl.move_up(displacement_y);
 	} else {
@@ -117,15 +119,15 @@ int main() {
 				//reset the center of the detected face after the correction
 				int displacement_x = biggest_face_detected.x - center_frame.x;
 				align_with_person(displacement_x, wheels_controller);
-				face_tracking.set_biggest_face_X(displacement_x);
+				//face_tracking.set_biggest_face_X(displacement_x);
 			}
 			//if detected face moved vertically, robot must align it's head with the person
 			if (!(biggest_face_detected.y <= (center_frame.y + TOLERANCE)) && !(biggest_face_detected.y >= (center_frame.y + TOLERANCE))) {
 				//compute the displacement and correct it
 				//reset the center of the detected face after the correction
 				int displacement_y = biggest_face_detected.y - center_frame.y;
-				align_head(displacement_y, head_controller);
-				face_tracking.set_biggest_face_Y(displacement_y);
+				align_head(-displacement_y, head_controller);
+				//face_tracking.set_biggest_face_Y(displacement_y);
 			}
 			//-----------------------------------------------
 
