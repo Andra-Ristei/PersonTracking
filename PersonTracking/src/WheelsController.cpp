@@ -15,8 +15,8 @@ t_wheels_controller::t_wheels_controller(void) {
 
 bool t_wheels_controller::connect() {
 	//connect to serial ports
-	if (!wheels_motors_controller.connect(3, 115200)) {
-		std::cout << ("Error attaching to Jenny 5' wheels!\n");
+	if (!wheels_motors_controller.connect(2, 115200)) {
+		printf("Error attaching to Jenny 5' wheels!\n");
 	}
 
 	//jenny5_event connect_to_wheels_motors_event(IS_ALIVE_EVENT);
@@ -28,6 +28,8 @@ bool t_wheels_controller::connect() {
 	bool foot_responded = false;
 
 	while (1) {
+		if (!wheels_motors_controller.update_commands_from_serial())
+			Sleep(5);
 		if (!foot_responded)
 			if (wheels_motors_controller.query_for_event(IS_ALIVE_EVENT, 0))  // have we received the event from Serial ?
 				foot_responded = true;
@@ -41,7 +43,7 @@ bool t_wheels_controller::connect() {
 		// if more than 3 seconds then game over
 		if (wait_time > NUM_SECONDS_TO_WAIT_FOR_CONNECTION) {
 			if (!foot_responded)
-				std::cout<< "Foot does not respond! Game over!";
+				printf("Foot does not respond! Game over!\n");
 			return false;
 		}
 	}
@@ -64,6 +66,8 @@ bool t_wheels_controller::setup() {
 	bool foot_motors_controler_created = false;
 
 	while (1) {
+		if (!wheels_motors_controller.update_commands_from_serial())
+			Sleep(5);
 		if (!foot_motors_controler_created)
 			if (wheels_motors_controller.query_for_event(STEPPER_MOTORS_CONTROLLER_CREATED_EVENT, 0))  // have we received the event from Serial ?
 				foot_motors_controler_created = true;
@@ -78,7 +82,7 @@ bool t_wheels_controller::setup() {
 		// if more than 3 seconds then game over
 		if (wait_time > NUM_SECONDS_TO_WAIT_FOR_CONNECTION) {
 			if (!foot_motors_controler_created)
-				std::cout << "Cannot create foot's motor controller! Game over!";
+				printf("Cannot create foot's motor controller! Game over!\n");
 			return false;
 		}
 	}
@@ -135,46 +139,47 @@ void t_wheels_controller::set_modify_distance_by(double new_distance) {
 }
 //----------------------------------------------------------------
 
-int t_wheels_controller::compute_steps_from_distance(double current_distance) {
-	return current_distance / (1.8) / (1 / 5) * (0.4);
+int t_wheels_controller::compute_steps_from_distance(int current_distance) {
+	int y = (int) (((current_distance / (1.8)) / 0.2) * (0.4));
+	return y;
 }
 //----------------------------------------------------------------
-void t_wheels_controller::move_backwards(double current_distance, int wait_for) {
+void t_wheels_controller::move_backwards(int current_distance, int wait_for) {
 	int num_steps = compute_steps_from_distance(current_distance);
-	
+
 	wheels_motors_controller.send_move_stepper_motor(MOTOR_FOOT_RIGHT, num_steps);
 	wheels_motors_controller.set_stepper_motor_state(MOTOR_FOOT_RIGHT, COMMAND_SENT);
-	printf("foot: M%d %d# - sent\n", MOTOR_FOOT_RIGHT, num_steps);
+	printf("foot: MS%d %d# - sent\n", MOTOR_FOOT_RIGHT, num_steps);
 
 	wheels_motors_controller.send_move_stepper_motor(MOTOR_FOOT_LEFT, -num_steps);
 	wheels_motors_controller.set_stepper_motor_state(MOTOR_FOOT_LEFT, COMMAND_SENT);
-	printf("foot: M%d %d# - sent\n", MOTOR_FOOT_LEFT, num_steps);
+	printf("foot: MS%d %d# - sent\n", MOTOR_FOOT_LEFT, num_steps);
 }
 //----------------------------------------------------------------
-void t_wheels_controller::move_forward(double current_distance, int wait_for) {
+void t_wheels_controller::move_forward(int current_distance, int wait_for) {
 	int num_steps = compute_steps_from_distance(current_distance);
-	
+
 	wheels_motors_controller.send_move_stepper_motor(MOTOR_FOOT_LEFT, num_steps);
 	wheels_motors_controller.set_stepper_motor_state(MOTOR_FOOT_LEFT, COMMAND_SENT);
-	printf("foot: M%d %d# - sent\n", MOTOR_FOOT_LEFT, num_steps);
-	
+	printf("foot: MS%d %d# - sent\n", MOTOR_FOOT_LEFT, num_steps);
+
 	wheels_motors_controller.send_move_stepper_motor(MOTOR_FOOT_RIGHT, -num_steps);
 	wheels_motors_controller.set_stepper_motor_state(MOTOR_FOOT_RIGHT, COMMAND_SENT);
-	printf("foot: M%d %d# - sent\n", MOTOR_FOOT_RIGHT, num_steps);
+	printf("foot: MS%d %d# - sent\n", MOTOR_FOOT_RIGHT, num_steps);
 }
 //----------------------------------------------------------------
 void t_wheels_controller::turn_left(int displacement, int wait_for) {
 	int num_steps = compute_steps_from_distance(displacement);
 	wheels_motors_controller.send_move_stepper_motor(MOTOR_FOOT_RIGHT, num_steps);
 	wheels_motors_controller.set_stepper_motor_state(MOTOR_FOOT_RIGHT, COMMAND_SENT);
-	printf("foot: M%d %d# - sent\n", MOTOR_FOOT_RIGHT, num_steps);
+	printf("foot: MS%d %d# - sent\n", MOTOR_FOOT_RIGHT, num_steps);
 }
 //----------------------------------------------------------------
 void t_wheels_controller::turn_right(int displacement, int wait_for) {
 	int num_steps = compute_steps_from_distance(displacement);
 	wheels_motors_controller.send_move_stepper_motor(MOTOR_FOOT_LEFT, num_steps);
 	wheels_motors_controller.set_stepper_motor_state(MOTOR_FOOT_LEFT, COMMAND_SENT);
-	printf("foot: M%d %d# - sent\n", MOTOR_FOOT_LEFT, num_steps);
+	printf("foot: MS%d %d# - sent\n", MOTOR_FOOT_LEFT, num_steps);
 }
 //----------------------------------------------------------------
 

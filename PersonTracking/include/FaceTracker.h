@@ -27,7 +27,6 @@ private:
 		profile_cascade_name = "classifiers\\haarcascade_profileface.xml",
 		hand_cascade_name = "classifiers\\cascade_hand.xml";
 	cv::CascadeClassifier face_cascade, eyes_cascade, profile_cascade, nose_cascade, mouth_cascade, hand_cascade;
-	cv::String window_name;
 
 	////Features params
 	//int maxCorners, blockSize;
@@ -63,6 +62,8 @@ private:
 	//void detect_hand_in_upper_corners(Mat);
 
 public:
+	cv::String window_name;
+
 	t_face_tracker();
 	~t_face_tracker();
 	

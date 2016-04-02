@@ -22,7 +22,7 @@ private:
 	double minimun_distance_allowed = 20;  //cm
 	double maximum_distance_allowed = 300;  //cm
 
-	int compute_steps_from_distance(double current_distance);
+	int compute_steps_from_distance(int current_distance);
 
 public:
 	t_wheels_controller(void);
@@ -35,8 +35,8 @@ public:
 	void turn_right(int displacement, int wait_for);
 	void turn_left(int displacement, int wait_for);
 	
-	void move_forward(double current_distance, int wait_for);
-	void move_backwards(double current_distance, int wait_for);
+	void move_forward(int current_distance, int wait_for);
+	void move_backwards(int current_distance, int wait_for);
 	
 	double get_minimum_distance_allowed();
 	double get_maximum_distance_allowed();
