@@ -27,39 +27,25 @@ private:
 		profile_cascade_name = "classifiers\\haarcascade_profileface.xml",
 		hand_cascade_name = "classifiers\\cascade_hand.xml";
 	cv::CascadeClassifier face_cascade, eyes_cascade, profile_cascade, nose_cascade, mouth_cascade, hand_cascade;
-
-	////Features params
-	//int maxCorners, blockSize;
-	//double qualityLevel, minDistance;
-	//// LK params
-	//Size winSize;
-	//int maxLevel;
-	//TermCriteria criteria;
-	//vector<Point2f> corners[2];
-
 	/** Coordinates of the face to be tracked **/
 	cv::Point biggest_face_origin = cv::Point(0, 0);
 	double biggest_face_height = 0.0, biggest_face_width = 0.0, distance_between_faces = 10.0;
 	/** Coordinates of the eyes **/
 	cv::Point left_eye_origin = cv::Point(0, 0), right_eye_origin = cv::Point(0, 0);
 	double eyes_height = 0.0, eyes_width = 0.0;
-
 	/** Coordinates of the nose**/
 	cv::Point nose_origin = cv::Point(0, 0);
 	double nose_height = 0.0, nose_width = 0.0;
 	/** Coordinates of the mouth**/
 	cv::Point mouth_origin = cv::Point(0, 0);
 	double mouth_height = 0.0, mouth_width = 0.0;
-
 	/** Coordinates of the right/left corners in which to detect the hand signaling a change of distance **/
 	cv::Mat right_corner, left_corner;
 
 
-	//void track_features(Mat&, Mat&, vector<Point2f>[]);
 	void detect_eyes(cv::Mat&, vector<cv::Rect_<int> >&);
 	void detect_nose(cv::Mat&, vector<cv::Rect_<int> >&);
 	void detect_mouth(cv::Mat&, vector<cv::Rect_<int> >&);
-	//void detect_hand_in_upper_corners(Mat);
 
 public:
 	cv::String window_name;
@@ -67,7 +53,7 @@ public:
 	t_face_tracker();
 	~t_face_tracker();
 	
-	void detect_faces_and_display(cv::Mat);
+	bool detect_faces_and_display(cv::Mat);
 	
 	cv::Point get_biggest_face_origin();
 	void set_biggest_face_X(int);

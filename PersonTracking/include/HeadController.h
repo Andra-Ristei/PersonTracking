@@ -13,6 +13,11 @@
 
 #define MOVE_X 0
 #define MOVE_Y 1
+
+#define MOTOR_HEAD_HORIZONTAL 0
+#define MOTOR_HEAD_VERTICAL 1
+
+#define NUM_SECONDS_TO_WAIT_FOR_CONNECTION 3
 //----------------------------------------------------------------
 
 class t_head_controller {
@@ -24,6 +29,7 @@ public:
 
 	bool connect();
 	bool setup();
+	bool go_to_home_position(t_jenny5_command_module &head_controller, char* error_string);
 
 	void move_left(unsigned int num_steps);
 	void move_right(unsigned int num_steps);

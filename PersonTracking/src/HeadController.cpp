@@ -1,15 +1,9 @@
 #include "../include/HeadController.h"
 
 
-#define MOTOR_HEAD_HORIZONTAL 0
-#define MOTOR_HEAD_VERTICAL 1
-
-#define NUM_SECONDS_TO_WAIT_FOR_CONNECTION 3
-
 //----------------------------------------------------------------
 t_head_controller::t_head_controller(void) {
 	if (connect()) {
-
 		printf("Connected to head...\n");
 	}
 	if (setup()) {
@@ -19,13 +13,10 @@ t_head_controller::t_head_controller(void) {
 //----------------------------------------------------------------
 bool t_head_controller::connect() {
 	//connect to serial ports
-	if (!head_motors_controller.connect(3, 115200)) {
+	if (!head_motors_controller.connect(4, 115200)) {
 		std::cout << ("Error attaching to Jenny 5' head motors!\n");
 		return false;
 	}
-
-	//jenny5_event connect_to_head_motors_event(IS_ALIVE_EVENT);
-	//return head_motors_controller.wait_for_command_completion(connect_to_head_motors_event);
 
 	// now wait to see if I have been connected
 	// wait for no more than 3 seconds. If it takes more it means that something is not right, so we have to abandon it
@@ -64,13 +55,19 @@ bool t_head_controller::setup() {
 
 	head_motors_controller.send_create_sonars(1, head_sonars_trig_pins, head_sonars_echo_pins);
 
-	//jenny5_event create_head_motors_event(STEPPER_MOTORS_CONTROLLER_CREATED_EVENT);
-	//return head_motors_controller.wait_for_command_completion(create_head_motors_event);
+	int head_infrared_pins[2] = { 0, 1 };
+	int head_infrared_min[2] = { 100, 100 };
+	int head_infrared_max[2] = { 650, 800 };
+	int head_infrared_home[2] = { 470, 400 };
+	int head_infrared_dir[2] = { 1, 1 };
+
+	head_motors_controller.send_create_infrared_sensors(2, head_infrared_pins, head_infrared_min, head_infrared_max, head_infrared_home, head_infrared_dir);
 
 	clock_t start_time = clock();
 
 	bool motors_controller_created = false;
 	bool sonars_controller_created = false;
+	bool infrareds_controller_created = false;
 
 	while (1) {
 		if (!head_motors_controller.update_commands_from_serial())
@@ -82,7 +79,10 @@ bool t_head_controller::setup() {
 		if (head_motors_controller.query_for_event(SONARS_CONTROLLER_CREATED_EVENT, 0))  // have we received the event from Serial ?
 			sonars_controller_created = true;
 
-		if (motors_controller_created && sonars_controller_created)
+		if (head_motors_controller.query_for_event(INFRARED_CONTROLLER_CREATED_EVENT, 0))  // have we received the event from Serial ?
+			infrareds_controller_created = true;
+
+		if (motors_controller_created && sonars_controller_created && infrareds_controller_created)
 			break;
 
 		// measure the passed time 
@@ -95,13 +95,19 @@ bool t_head_controller::setup() {
 				printf("Cannot create head's motors controller! Game over!");
 			if (!sonars_controller_created)
 				printf("Cannot create head's sonars controller! Game over!");
+			if (!infrareds_controller_created)
+				printf("Cannot create head's infrared controller! Game over!");
 			return false;
 		}
 	}
 
-
 	head_motors_controller.send_set_stepper_motor_speed_and_acceleration(MOTOR_HEAD_HORIZONTAL, 1000, 50);
 	head_motors_controller.send_set_stepper_motor_speed_and_acceleration(MOTOR_HEAD_VERTICAL, 1000, 50);
+
+	int infrared_index_m1[1] = { 0 };
+	int infrared_index_m2[1] = { 1 };
+	head_motors_controller.send_attach_sensors_to_stepper_motor(0, 0, NULL, 1, infrared_index_m1, 0, NULL);
+	head_motors_controller.send_attach_sensors_to_stepper_motor(1, 0, NULL, 1, infrared_index_m2, 0, NULL);
 
 	return true;
 

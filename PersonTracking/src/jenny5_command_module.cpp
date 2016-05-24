@@ -12,7 +12,7 @@
 //--------------------------------------------------------------
 t_jenny5_command_module::t_jenny5_command_module(void)
 {
-	strcpy(version, "2016.02.17.3"); // year.month.day.build number
+	strcpy(version, "2016.05.24.0"); // year.month.day.build number
 	current_buffer[0] = 0;
 	for (int i = 0; i < 4; i++)
 		stepper_motor_state[i] = COMMAND_DONE;
@@ -20,9 +20,9 @@ t_jenny5_command_module::t_jenny5_command_module(void)
 		dc_motor_state[i] = COMMAND_DONE;
 	for (int i = 0; i < 6; i++)
 		sonar_state[i] = COMMAND_DONE;
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 6; i++)
 		potentiometer_state[i] = COMMAND_DONE;
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < 6; i++)
 		infrared_state[i] = COMMAND_DONE;
 }
 //--------------------------------------------------------------
@@ -62,14 +62,14 @@ void t_jenny5_command_module::send_move_stepper_motor(int motor_index, int num_s
 void t_jenny5_command_module::send_move_stepper_motor2(int motor_index1, int num_steps1, int motor_index2, int num_steps2)
 {
 	char s[30];
-	sprintf(s, "MS%d %d M%d %d#", motor_index1, num_steps1, motor_index2, num_steps2);
+	sprintf(s, "MS%d %d MS%d %d#", motor_index1, num_steps1, motor_index2, num_steps2);
 	RS232_SendBuf(port_number, (unsigned char*)s, (int)strlen(s));
 }
 //--------------------------------------------------------------
 void t_jenny5_command_module::send_move_stepper_motor3(int motor_index1, int num_steps1, int motor_index2, int num_steps2, int motor_index3, int num_steps3)
 {
 	char s[63];
-	sprintf(s, "MS%d %d M%d %d M%d %d#", motor_index1, num_steps1, motor_index2, num_steps2, motor_index3, num_steps3);
+	sprintf(s, "MS%d %d MS%d %d MS%d %d#", motor_index1, num_steps1, motor_index2, num_steps2, motor_index3, num_steps3);
 	RS232_SendBuf(port_number, (unsigned char*)s, (int)strlen(s));
 }
 //--------------------------------------------------------------
@@ -77,7 +77,7 @@ void t_jenny5_command_module::send_move_stepper_motor4(int motor_index1, int num
 {
 
 	char s[63];
-	sprintf(s, "MS%d %d M%d %d M%d %d M%d %d#", motor_index1, num_steps1, motor_index2, num_steps2, motor_index3, num_steps3, motor_index4, num_steps4);
+	sprintf(s, "MS%d %d MS%d %d MS%d %d MS%d %d#", motor_index1, num_steps1, motor_index2, num_steps2, motor_index3, num_steps3, motor_index4, num_steps4);
 	RS232_SendBuf(port_number, (unsigned char*)s, (int)strlen(s));
 }
 //--------------------------------------------------------------
@@ -108,7 +108,7 @@ void t_jenny5_command_module::send_get_sonar_distance(int sensor_index)
 	RS232_SendBuf(port_number, (unsigned char*)s, (int)strlen(s));
 }
 //--------------------------------------------------------------
-void t_jenny5_command_module::send_get_button_status(int button_index)
+void t_jenny5_command_module::send_get_button_state(int button_index)
 {
 	char s[20];
 	sprintf(s, "B%d#", button_index);
@@ -122,7 +122,7 @@ void t_jenny5_command_module::send_get_potentiometer_position(int sensor_index)
 	RS232_SendBuf(port_number, (unsigned char*)s, (int)strlen(s));
 }
 //--------------------------------------------------------------
-void t_jenny5_command_module::send_get_infrared_distance(int sensor_index)
+void t_jenny5_command_module::send_get_infrared_signal_strength(int sensor_index)
 {
 	char s[20];
 	sprintf(s, "I%d#", sensor_index);
@@ -155,15 +155,27 @@ int t_jenny5_command_module::get_data_from_serial(char *buffer, int buffer_size)
 	return RS232_PollComport(port_number, (unsigned char*)buffer, buffer_size);
 }
 //--------------------------------------------------------------
-void t_jenny5_command_module::send_attach_sensors_to_stepper_motor(int motor_index, int num_potentiometers, int *potentiometers_index)
+void t_jenny5_command_module::send_attach_sensors_to_stepper_motor(int motor_index, int num_potentiometers, int *potentiometers_index, int num_infrared, int *infrared_index, int num_buttons, int *buttons_index)
 {
-	char s[64];
-	sprintf(s, "AS%d %d", motor_index, num_potentiometers);
+	char s[63];
+	sprintf(s, "AS%d %d", motor_index, num_potentiometers + num_infrared + num_buttons);
 	for (int i = 0; i < num_potentiometers; i++) {
-		char tmp_str[64];
-		sprintf(s, " P%d#", potentiometers_index[i]);
+		char tmp_str[63];
+		sprintf(tmp_str, " P%d#", potentiometers_index[i]);
 		strcat(s, tmp_str);
 	}
+	for (int i = 0; i < num_infrared; i++) {
+		char tmp_str[63];
+		sprintf(tmp_str, " I%d#", infrared_index[i]);
+		strcat(s, tmp_str);
+	}
+
+	for (int i = 0; i < num_buttons; i++) {
+		char tmp_str[63];
+		sprintf(tmp_str, " B%d#", buttons_index[i]);
+		strcat(s, tmp_str);
+	}
+
 	RS232_SendBuf(port_number, (unsigned char*)s, (int)strlen(s));
 }
 //--------------------------------------------------------------
@@ -315,6 +327,12 @@ void t_jenny5_command_module::parse_and_queue_commands(char* tmp_str, int str_le
 															received_events.Add((void*)e);
 														}
 														else
+															if (tmp_str[i + 1] == 'B' || tmp_str[i + 1] == 'b') {// infrared controller created
+																i += 3;
+																jenny5_event *e = new jenny5_event(BUTTONS_CONTROLLER_CREATED_EVENT, 0, 0, 0);
+																received_events.Add((void*)e);
+															}
+															else
 															i++;
 										}
 										else// not an recognized event
@@ -334,6 +352,7 @@ bool t_jenny5_command_module::update_commands_from_serial(void)
 	tmp_buffer[received_size] = 0;
 	if (received_size) {
 		strcpy(current_buffer + strlen(current_buffer), tmp_buffer);
+	//	printf("%s\n", current_buffer);
 
 		size_t buffer_length = strlen(current_buffer);
 		for (size_t i = 0; i < buffer_length; i++)
@@ -562,7 +581,7 @@ void t_jenny5_command_module::set_stepper_motor_state(int motor_index, int state
 //--------------------------------------------------------------
 void t_jenny5_command_module::send_create_stepper_motors(int num_motors, int* dir_pins, int* step_pins, int* enable_pins)
 {
-	char s[100];
+	char s[63];
 	sprintf(s, "CS %d", num_motors);
 	char tmp_s[100];
 	for (int i = 0; i < num_motors; i++) {
@@ -576,7 +595,7 @@ void t_jenny5_command_module::send_create_stepper_motors(int num_motors, int* di
 //--------------------------------------------------------------
 void t_jenny5_command_module::send_create_dc_motors(int num_motors, int *pwm_pins, int* dir1_pins, int* dir2_pins, int* enable_pins)
 {
-	char s[100];
+	char s[63];
 	sprintf(s, "CD %d", num_motors);
 	char tmp_s[100];
 	for (int i = 0; i < num_motors; i++) {
@@ -590,7 +609,7 @@ void t_jenny5_command_module::send_create_dc_motors(int num_motors, int *pwm_pin
 //--------------------------------------------------------------
 void t_jenny5_command_module::send_create_sonars(int num_sonars, int* trig_pins, int* echo_pins)
 {
-	char s[100];
+	char s[63];
 	sprintf(s, "CU %d", num_sonars);
 	char tmp_s[100];
 	for (int i = 0; i < num_sonars; i++) {
@@ -604,7 +623,7 @@ void t_jenny5_command_module::send_create_sonars(int num_sonars, int* trig_pins,
 //--------------------------------------------------------------
 void t_jenny5_command_module::send_create_potentiometers(int num_potentiometers, int* out_pins, int* _low, int* _high, int *_home)
 {
-	char s[100];
+	char s[63];
 	sprintf(s, "CP %d", num_potentiometers);
 	char tmp_s[100];
 	for (int i = 0; i < num_potentiometers; i++) {
@@ -616,13 +635,27 @@ void t_jenny5_command_module::send_create_potentiometers(int num_potentiometers,
 	RS232_SendBuf(port_number, (unsigned char*)s, (int)strlen(s));
 }
 //--------------------------------------------------------------
-void t_jenny5_command_module::send_create_infrared_sensors(int num_infrared_sensors, int* _pins, int* _low)
+void t_jenny5_command_module::send_create_infrared_sensors(int num_infrared_sensors, int* _out_pins, int *_min, int *_max, int *_home, int *_dir)
 {
-	char s[100];
+	char s[63];
 	sprintf(s, "CI %d", num_infrared_sensors);
 	char tmp_s[100];
 	for (int i = 0; i < num_infrared_sensors; i++) {
-		sprintf(tmp_s, "%d %d", _pins[i], _low[i]);
+		sprintf(tmp_s, "%d %d %d %d %d", _out_pins[i], _min[i], _max[i], _home[i], _dir[i]);
+		strcat(s, " ");
+		strcat(s, tmp_s);
+	}
+	strcat(s, "#");
+	RS232_SendBuf(port_number, (unsigned char*)s, (int)strlen(s));
+}
+//--------------------------------------------------------------
+void t_jenny5_command_module::send_create_buttons(int num_buttons, int* out_pins, int *_dir)
+{
+	char s[63];
+	sprintf(s, "CB %d", num_buttons);
+	char tmp_s[100];
+	for (int i = 0; i < num_buttons; i++) {
+		sprintf(tmp_s, "%d %d", out_pins[i], _dir[i]);
 		strcat(s, " ");
 		strcat(s, tmp_s);
 	}

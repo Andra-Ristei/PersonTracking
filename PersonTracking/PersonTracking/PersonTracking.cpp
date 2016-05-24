@@ -1,14 +1,57 @@
-#include "../include/FaceTracker.h"
+﻿#include "../include/FaceTracker.h"
 #include "../include/WheelsController.h"
 #include "../include/HeadController.h"
 #include "../include/jenny5_command_module.h"
 
+//----------------------------------------------------------------
 using namespace cv;
 
 #define ULTRASONIC 0
 #define TOLERANCE 20
+//----------------------------------------------------------------
+bool go_to_home_position(t_jenny5_command_module *head_controller) {
+	// must home the head
+	head_controller->send_go_home_stepper_motor(MOTOR_HEAD_HORIZONTAL);
+	head_controller->send_go_home_stepper_motor(MOTOR_HEAD_VERTICAL);
 
+	printf("Head motors home started ...");
+	clock_t start_time = clock();
+	bool horizontal_motor_homed = false;
+	bool vertical_motor_homed = false;
 
+	while (1) {
+		if (!head_controller->update_commands_from_serial())
+			Sleep(5); // no new data from serial ... we make a little pause so that we don't kill the processor
+
+		if (!horizontal_motor_homed)
+			if (head_controller->query_for_event(STEPPER_MOTOR_MOVE_DONE_EVENT, MOTOR_HEAD_HORIZONTAL))  // have we received the event from Serial ?
+				horizontal_motor_homed = true;
+
+		if (!vertical_motor_homed)
+			if (head_controller->query_for_event(STEPPER_MOTOR_MOVE_DONE_EVENT, MOTOR_HEAD_VERTICAL))  // have we received the event from Serial ?
+				vertical_motor_homed = true;
+
+		if (horizontal_motor_homed && vertical_motor_homed)
+			break;
+
+		// measure the passed time 
+		clock_t end_time = clock();
+
+		double wait_time = (double) (end_time - start_time) / CLOCKS_PER_SEC;
+		// if more than 5 seconds and no home
+		if (wait_time > 5) {
+			if (!vertical_motor_homed)
+				printf("Cannot home vertical motor! Game over!");
+			if (!horizontal_motor_homed)
+				printf("Cannot home vertical motor! Game over!");
+			return false;
+		}
+	}
+
+	printf("DONE\n");
+	return true;
+}
+//----------------------------------------------------------------
 void align_with_person(int displacement_x, t_wheels_controller *ctrl) {
 	if (displacement_x > 0) {
 		ctrl->turn_left(displacement_x, WHEELS_MOVING);
@@ -16,7 +59,7 @@ void align_with_person(int displacement_x, t_wheels_controller *ctrl) {
 		ctrl->turn_right(displacement_x, WHEELS_MOVING);
 	}
 }
-
+//----------------------------------------------------------------
 void align_head(int displacement_y, t_head_controller *ctrl) {
 	displacement_y = displacement_y / 1.8 * 16.0;
 	if (displacement_y > 0) {
@@ -27,21 +70,21 @@ void align_head(int displacement_y, t_head_controller *ctrl) {
 		}
 	}
 }
-
+//----------------------------------------------------------------
 void reduce_distance_to_person(t_wheels_controller *ctrl) {
 	double new_distance = ctrl->get_distance_to_person() - ctrl->get_modify_distance_by();
 	if (new_distance > ctrl->get_minimum_distance_allowed() && new_distance < ctrl->get_maximum_distance_allowed()) {
 		ctrl->set_distance_to_person(new_distance);
 	}
 }
-
+//----------------------------------------------------------------
 void increase_distance_to_person(t_wheels_controller *ctrl) {
 	double new_distance = ctrl->get_distance_to_person() + ctrl->get_modify_distance_by();
 	if (new_distance < ctrl->get_maximum_distance_allowed() && new_distance > ctrl->get_minimum_distance_allowed()) {
 		ctrl->set_distance_to_person(new_distance);
 	}
 }
-
+//----------------------------------------------------------------
 void ping_sensor(int sensor, t_jenny5_command_module *head_controller) {
 	if (sensor == ULTRASONIC) {
 		if (head_controller->get_sonar_state(0) == COMMAND_DONE) {// I ping the sonar only if no ping was sent before
@@ -50,7 +93,7 @@ void ping_sensor(int sensor, t_jenny5_command_module *head_controller) {
 		}
 	}
 }
-
+//----------------------------------------------------------------
 int read_ultrasonic_sensor(t_jenny5_command_module *head_controller) {
 	int distance = 0;;
 	if (head_controller->get_sonar_state(0) == COMMAND_SENT) {// if a command has been sent
@@ -58,11 +101,9 @@ int read_ultrasonic_sensor(t_jenny5_command_module *head_controller) {
 			head_controller->set_sonar_state(0, COMMAND_DONE);
 		}
 	}
-	//transform from miliseconds to cm
-	distance = (distance / 2) / 29;
 	return distance;
 }
-
+//----------------------------------------------------------------
 void move_closer(int wait_for, t_wheels_controller *wheels_ctrl, t_jenny5_command_module *head_ctrl) {
 	int current_distance;
 	while ((current_distance = read_ultrasonic_sensor(head_ctrl)) > wheels_ctrl->get_distance_to_person()) {
@@ -70,7 +111,7 @@ void move_closer(int wait_for, t_wheels_controller *wheels_ctrl, t_jenny5_comman
 		current_distance += 100;
 	}
 }
-
+//----------------------------------------------------------------
 void move_farther(int wait_for, t_wheels_controller *wheels_ctrl, t_jenny5_command_module *head_ctrl) {
 	int current_distance;
 	while ((current_distance = read_ultrasonic_sensor(head_ctrl)) < wheels_ctrl->get_distance_to_person()) {
@@ -78,13 +119,16 @@ void move_farther(int wait_for, t_wheels_controller *wheels_ctrl, t_jenny5_comma
 		current_distance += 100;
 	}
 }
-
+//----------------------------------------------------------------
 
 int main() {
 	t_face_tracker face_tracking;
 	t_wheels_controller wheels_controller;
 	t_head_controller head_controller;
 	t_jenny5_command_module command_module;
+
+	//move the head to the home position
+	go_to_home_position(&command_module);
 
 	VideoCapture capture;
 	Mat frame;
@@ -99,12 +143,17 @@ int main() {
 
 	Point center_frame = Point(frame.size().width / 2, frame.size().height / 2);
 	while (capture.read(frame)) {
+		//read a frame
 		imshow(face_tracking.window_name, frame);
 		if (frame.empty()) {
 			printf(" --(!) No captured frame -- Break!");
 			return -1;
 		}
 
+		//draw the rectangles in which the hands are being searched for
+		rectangle(frame, Point(0, 0), Point(frame.size().width / 4, frame.size().height / 2), Scalar(200, 0, 0), 8);
+		rectangle(frame, Point(frame.size().width / 2 + frame.size().width / 4, 0), Point(frame.size().width, frame.size().height / 2), Scalar(200, 0, 0), 8);
+		
 		//detect the biggest face in the frame
 		bool face_detected = face_tracking.detect_faces_and_display(frame);
 
@@ -155,6 +204,21 @@ int main() {
 			} else move_farther(WHEELS_MOVING, &wheels_controller, &command_module);
 			//-----------------------------------------------
 		}
+
+		// now extract the executed moves from the queue ... otherwise they will just stay there
+		if (command_module.get_stepper_motor_state(MOTOR_HEAD_HORIZONTAL) == COMMAND_SENT) {// if a command has been sent
+			if (command_module.query_for_event(STEPPER_MOTOR_MOVE_DONE_EVENT, MOTOR_HEAD_HORIZONTAL)) { // have we received the event from Serial ?
+				command_module.set_stepper_motor_state(MOTOR_HEAD_HORIZONTAL, COMMAND_DONE);
+			}
+		}
+
+		// now extract the moves done from the queue
+		if (command_module.get_stepper_motor_state(MOTOR_HEAD_VERTICAL) == COMMAND_SENT) {// if a command has been sent
+			if (command_module.query_for_event(STEPPER_MOTOR_MOVE_DONE_EVENT, MOTOR_HEAD_VERTICAL)) { // have we received the event from Serial ?
+				command_module.set_stepper_motor_state(MOTOR_HEAD_VERTICAL, COMMAND_DONE);
+			}
+		}
+
 		int c = waitKey(10);
 		if ((char) c == 27) {
 			break;
@@ -163,3 +227,63 @@ int main() {
 
 	return 0;
 }
+
+
+
+//int main() {
+//	t_face_tracker face_tracking;
+//	VideoCapture capture;
+//	Mat frame;
+//
+//	String filename = "frames/";
+//	int count = 0, faceCount = 0;
+//	
+//	//Open and Read the video stream from the webcam
+//	capture.open(0);
+//	if (!capture.isOpened()) {
+//		printf("--(!)Error opening video capture\n");
+//		return -1;
+//	}
+//	capture.read(frame);
+//
+//	time_t start = time(NULL), now = time(NULL);
+//	double seconds = 0;
+//	while (capture.read(frame) && (difftime(now, start) <= 60)) {
+//		now = time(NULL);
+//		printf("loop time is : %s", ctime(&now));
+//
+//		//Open a window to display the resulting frames
+//		imshow(face_tracking.window_name, frame);
+//
+//		//Check if a frame was read
+//		if (frame.empty()) {
+//			printf(" --(!) No captured frame -- Break!");
+//			return -1;
+//		}
+//		//Mark the corners in which a hand can be detected
+//		rectangle(frame, Point(0, 0), Point(frame.size().width / 4, frame.size().height / 2), Scalar(200, 0, 0), 8);
+//		rectangle(frame, Point(frame.size().width / 2 + frame.size().width / 4, 0), Point(frame.size().width, frame.size().height / 2), Scalar(200, 0, 0), 8);
+//		
+//		//Call method for detecting a face
+//		if (face_tracking.detect_faces_and_display(frame)) {
+//			faceCount++;
+//			cout << "Detected face: " << faceCount << endl ;
+//		}
+//		//Call methods for detecting the hands in the corners
+//		face_tracking.right_hand_detected(frame);
+//		face_tracking.left_hand_detected(frame);
+//
+//		count++;
+//		stringstream file;
+//		file << filename << count << ".jpg";
+//		imwrite(file.str(), frame);
+//
+//		//Check if ESC was pressed in order to stop the program
+//		int c = waitKey(10);
+//		if ((char) c == 27) {
+//			break;
+//		}
+//	}
+//	cin >> count;
+//	return 0;
+//}
