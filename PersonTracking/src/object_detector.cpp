@@ -58,24 +58,30 @@ t_object_detector::~t_object_detector() {
 /// </summary>
 /// <param name="frame">The frame.</param>
 bool t_object_detector::left_hand_detected(Mat frame) {
+	//flip the image and apply the detection method
+	Mat flipped_frame;
+	flip(frame, flipped_frame, 1);
+	//imshow("flip", flipped_frame);
 	//Set the corners for hand detection and mark them
-	left_corner = frame(Rect(0, 0, frame.size().width / 4, frame.size().height / 2));
+	right_corner = flipped_frame(Rect(0, 0, flipped_frame.size().width / 4, flipped_frame.size().height / 2));
+	//right_corner = frame(Rect(frame.size().width / 2 + frame.size().width / 4, 0, frame.size().width / 4, frame.size().height / 2));
 
 	//Transform the image into grayscale so that the classifier can work with less info
-	cvtColor(left_corner, left_corner, COLOR_BGR2GRAY);
-	equalizeHist(left_corner, left_corner);
+	cvtColor(right_corner, right_corner, COLOR_BGR2GRAY);
+	equalizeHist(right_corner, right_corner);
 
 	//Store the hands that the classifier detected
 	vector<Rect> hands, palms;
 
 	//Detect hands with the classifier
-	hand_cascade.detectMultiScale(left_corner, hands, 1.1, 2, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(5, 5), Size(100, 100));
+	hand_cascade.detectMultiScale(right_corner, hands, 1.1, 3, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(200, 200));
 	if (hands.size() > 0) {
-		//If a hand was detected, check if a palm can be found to be sure that it is a hand
+		//If a hand was detected, chack if a palm can be found to confirm that it's a hand
 		Mat hand_frame = frame(Rect(hands[0].x, hands[0].y, hands[0].width, hands[0].height));
-		palm_cascade.detectMultiScale(left_corner, palms, 1.1, 2, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(5, 5), Size(100, 100));
+		palm_cascade.detectMultiScale(hand_frame, palms, 1.1, 3, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(200, 200));
 		if (palms.size() > 0) {
-			rectangle(frame, Point(hands[0].x, hands[0].y), Point(hands[0].x + hands[0].width, hands[0].y + hands[0].height), Scalar(0, 0, 255), 2);
+			double x = frame.size().width / 4 + frame.size().width / 2 + hands[0].x;
+			rectangle(frame, Point(x, hands[0].y), Point(x + hands[0].width, hands[0].y + hands[0].height), Scalar(0, 255, 0), 2);
 			//Show the results
 			imshow(window_name, frame);
 
@@ -92,28 +98,24 @@ bool t_object_detector::left_hand_detected(Mat frame) {
 /// <param name="frame">The frame.</param>
 /// <returns></returns>
 bool t_object_detector::right_hand_detected(Mat frame) {
-	//flip the image and apply the detection method
-	Mat flipped_frame;
-	flip(frame, flipped_frame, 1);
 	//Set the corners for hand detection and mark them
-	right_corner = flipped_frame(Rect(0, 0, flipped_frame.size().width / 4, flipped_frame.size().height / 2));
+	left_corner = frame(Rect(0, 0, frame.size().width / 4, frame.size().height / 2));
 
 	//Transform the image into grayscale so that the classifier can work with less info
-	cvtColor(right_corner, right_corner, COLOR_BGR2GRAY);
-	equalizeHist(right_corner, right_corner);
+	cvtColor(left_corner, left_corner, COLOR_BGR2GRAY);
+	equalizeHist(left_corner, left_corner);
 
 	//Store the hands that the classifier detected
 	vector<Rect> hands, palms;
 
 	//Detect hands with the classifier
-	hand_cascade.detectMultiScale(right_corner, hands, 1.1, 2, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(5, 5), Size(100, 100));
+	hand_cascade.detectMultiScale(left_corner, hands, 1.1, 3, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(200, 200));
 	if (hands.size() > 0) {
-		//If a hand was detected, chack if a palm can be found to confirm that it's a hand
+		//If a hand was detected, check if a palm can be found to be sure that it is a hand
 		Mat hand_frame = frame(Rect(hands[0].x, hands[0].y, hands[0].width, hands[0].height));
-		palm_cascade.detectMultiScale(hand_frame, palms, 1.1, 2, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(5, 5), Size(100, 100));
+		palm_cascade.detectMultiScale(left_corner, palms, 1.1, 3, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(200, 200));
 		if (palms.size() > 0) {
-			double x = frame.size().width / 4 + frame.size().width / 2 + hands[0].x;
-			rectangle(frame, Point(x, hands[0].y), Point(x + hands[0].width, hands[0].y + hands[0].height), Scalar(0, 255, 0), 2);
+			rectangle(frame, Point(hands[0].x, hands[0].y), Point(hands[0].x + hands[0].width, hands[0].y + hands[0].height), Scalar(255, 0, 0), 2);
 			//Show the results
 			imshow(window_name, frame);
 
@@ -138,7 +140,7 @@ bool t_object_detector::detect_faces_and_display(Mat frame) {
 	equalizeHist(frame_gray, frame_gray);
 
 	//Detect faces and features with the classifiers
-	face_cascade.detectMultiScale(frame_gray, faces, 1.1, 3, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(100, 100));
+	face_cascade.detectMultiScale(frame_gray, faces, 1.1, 3, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(200, 200));
 	if (faces.size() > 0) {
 		//The index of the first and only face detected
 		int i = 0;
@@ -185,7 +187,7 @@ bool t_object_detector::detect_faces_and_display(Mat frame) {
 		}
 	} else {
 		//Detect profile faces
-		profile_cascade.detectMultiScale(frame_gray, profiles, 1.1, 4, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(100, 100));
+		profile_cascade.detectMultiScale(frame_gray, profiles, 1.1, 4, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(200, 200));
 
 		if (profiles.size() > 0) {
 			//The index of the first and biggest profile face detected
@@ -214,7 +216,7 @@ bool t_object_detector::detect_faces_and_display(Mat frame) {
 			//Flip the image to try and find a profile face
 			flip(frame_gray, flipped_frame, 1);
 			//Detect profile faces
-			profile_cascade.detectMultiScale(flipped_frame, profiles, 1.1, 4, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(100, 100));
+			profile_cascade.detectMultiScale(flipped_frame, profiles, 1.1, 4, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(200, 200));
 			if (profiles.size() > 0) {
 				faceExists = true;
 				//The index of the first and biggest profile face detected
