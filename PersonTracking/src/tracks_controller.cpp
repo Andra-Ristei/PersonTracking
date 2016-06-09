@@ -4,17 +4,17 @@
 //----------------------------------------------------------------
 t_tracks_controller::t_tracks_controller(void) {
 	if (connect()) {
-		printf("Connected to wheels...\n");
+		printf("Connected to tracks...\n");
 	}
 	if (setup()) {
-		printf("Wheels setup complete...\n");
+		printf("Tracks setup complete...\n");
 	}
 }
 //----------------------------------------------------------------
 bool t_tracks_controller::connect() {
 	//connect to serial ports
 	if (!wheels_motors_controller.connect(3, 115200)) {
-		printf("Error attaching to Jenny 5' wheels!\n");
+		printf("Error attaching to Jenny 5' tracks!\n");
 	}
 
 	// now wait to see if I have been connected

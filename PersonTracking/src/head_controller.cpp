@@ -165,7 +165,7 @@ int t_head_controller::read_sensor(int sensor) {
 		if (head_motors_controller.get_sonar_state(0) == COMMAND_SENT) {// if a command has been sent
 			if (head_motors_controller.query_for_event(SONAR_EVENT, 0, &distance)) { // have we received the event from Serial ?
 				head_motors_controller.set_sonar_state(0, COMMAND_DONE);
-				printf("distance = %d cm\n", distance);
+				printf("---current distance = %d cm\n", distance);
 			}
 		}
 	}
@@ -177,7 +177,7 @@ void t_head_controller::ping_sensor(int sensor) {
 		if (head_motors_controller.get_sonar_state(0) == COMMAND_DONE) {// I ping the sonar only if no ping was sent before
 			head_motors_controller.send_get_sonar_distance(0);
 			head_motors_controller.set_sonar_state(0, COMMAND_SENT);
-			printf("U0# - sent\n");
+			printf("---read distance sensor: U0# - sent\n");
 		}
 	}
 }
