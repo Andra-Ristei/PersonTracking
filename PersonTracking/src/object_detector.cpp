@@ -73,7 +73,9 @@ bool t_object_detector::left_hand_detected(Mat frame) {
 	vector<Rect> hands, palms;
 
 	//Detect hands with the classifier
-	hand_cascade.detectMultiScale(right_corner, hands, 1.03, 3, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(200, 200));
+	//scale=1.03; size=3
+	//scale=1.05; size=6
+	hand_cascade.detectMultiScale(right_corner, hands, 1.05, 6, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(50, 50), Size(200, 200));
 	if (hands.size() > 0) {
 		//If a hand was detected, chack if a palm can be found to confirm that it's a hand
 		Mat hand_frame = frame(Rect(hands[0].x, hands[0].y, hands[0].width, hands[0].height));
@@ -108,7 +110,7 @@ bool t_object_detector::right_hand_detected(Mat frame) {
 	vector<Rect> hands, palms;
 
 	//Detect hands with the classifier
-	hand_cascade.detectMultiScale(left_corner, hands, 1.1, 6, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(30, 30), Size(200, 200));
+	hand_cascade.detectMultiScale(left_corner, hands, 1.1, 6, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(50, 50), Size(200, 200));
 	if (hands.size() > 0) {
 		//If a hand was detected, check if a palm can be found to be sure that it is a hand
 		Mat hand_frame = frame(Rect(hands[0].x, hands[0].y, hands[0].width, hands[0].height));
