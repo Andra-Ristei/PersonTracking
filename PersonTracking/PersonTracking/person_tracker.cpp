@@ -78,8 +78,6 @@ void execute_commands_from_queue(t_head_controller *head_controller, t_tracks_co
 
 
 int main() {
-	freopen("out.txt", "w", stdout);
-
 	t_object_detector object_detector;
 	t_tracks_controller tracks_controller;
 	t_head_controller head_controller;
@@ -211,6 +209,7 @@ int main() {
 		//escape
 		int c = waitKey(10);
 		if ((char) c == 27) {
+			tracks_controller.cancel_commands();
 			break;
 		}
 		//-----------------------------------------------

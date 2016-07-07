@@ -53,6 +53,8 @@ public:
 	void set_maximum_distance_allowed(double new_distance);
 	void set_distance_to_person(double new_distance);
 	void set_modify_distance_by(double new_distance);
+
+	void cancel_commands();
 };
 
 #endif

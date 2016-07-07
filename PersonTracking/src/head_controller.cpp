@@ -57,7 +57,7 @@ bool t_head_controller::setup() {
 	int head_infrared_pins[2] = { 0, 1 };
 	int head_infrared_min[2] = { 100, 100 };
 	int head_infrared_max[2] = { 650, 800 };
-	int head_infrared_home[2] = { 430, 300 }; //{ 470, 400 };
+	int head_infrared_home[2] = { 430, 300 };
 	int head_infrared_dir[2] = { 1, 1 };
 
 	head_motors_controller.send_create_infrared_sensors(2, head_infrared_pins, head_infrared_min, head_infrared_max, head_infrared_home, head_infrared_dir);

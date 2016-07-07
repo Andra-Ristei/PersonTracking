@@ -73,8 +73,6 @@ bool t_object_detector::left_hand_detected(Mat frame) {
 	vector<Rect> hands, palms;
 
 	//Detect hands with the classifier
-	//scale=1.03; size=3
-	//scale=1.05; size=6
 	hand_cascade.detectMultiScale(right_corner, hands, 1.05, 6, CV_HAAR_FIND_BIGGEST_OBJECT | CV_HAAR_SCALE_IMAGE, Size(50, 50), Size(200, 200));
 	if (hands.size() > 0) {
 		//If a hand was detected, chack if a palm can be found to confirm that it's a hand
@@ -167,23 +165,9 @@ bool t_object_detector::detect_faces_and_display(Mat frame) {
 				Point upper_left = Point(faces[i].x, faces[i].y);
 				Point lower_right = Point(faces[i].x + faces[i].width, faces[i].y + faces[i].height);
 				rectangle(frame, upper_left, lower_right, Scalar(100, 0, 100), 4);
-
-				////Detect and mark the eyes
-				//mark_eyes(ROI, faces, eyes);
-				////Detect and mark the nose
-				//mark_nose(ROI, faces, noses);
-				////Detect and mark the mouth
-				//mark_mouth(ROI, faces, mouths);
-
 			} else {
 				//Mark the face in the frame
 				rectangle(frame, biggest_face_origin, Point(biggest_face_origin.x + biggest_face_width, biggest_face_origin.y + biggest_face_height), Scalar(100, 0, 10), 4);
-
-				//Mark the face characteristics in the frame
-				//rectangle(ROI, left_eye_origin, Point(left_eye_origin.x + eyes_width, left_eye_origin.y + eyes_height), Scalar(200, 0, 0), 1);
-				//rectangle(ROI, right_eye_origin, Point(right_eye_origin.x + eyes_width, right_eye_origin.y + eyes_height), Scalar(200, 0, 0), 1);
-				//rectangle(ROI, nose_origin, Point(nose_origin.x + nose_width, nose_origin.y + nose_height), Scalar(200, 0, 0), 1);
-				//rectangle(ROI, mouth_origin, Point(mouth_origin.x + mouth_width, mouth_origin.y + mouth_height), Scalar(200, 0, 0), 1);
 			}
 		}
 	} else {

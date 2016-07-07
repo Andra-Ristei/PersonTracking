@@ -135,10 +135,6 @@ void t_tracks_controller::set_modify_distance_by(double new_distance) {
 //----------------------------------------------------------------
 int t_tracks_controller::compute_steps_from_distance(int current_distance, int limit) {
 	int distance = abs(limit - current_distance);
-	//x=d/pi*diam => nr rotatii roata mare, diam~=9
-	//200 pasi/rotatie compl => x=x*200 = nr pasi
-	//reductie roata mare de 5la1 => x*5.13
-	//raport reductie rotita mare si reductie rotita mica => x*4
 	double big_wheel_diameter = 10, steps_per_rotation = 200, big_wheel_reduction = 5.13, small_wheel_reduction = 4;
 	double x = (double) distance / (M_PI*big_wheel_diameter);
 	x = x*steps_per_rotation;
@@ -186,6 +182,13 @@ void t_tracks_controller::turn_right(int displacement) {
 	wheels_motors_controller.set_stepper_motor_state(MOTOR_tracks_RIGHT, COMMAND_SENT);
 	wheels_motors_controller.set_stepper_motor_state(MOTOR_tracks_LEFT, COMMAND_SENT);
 	printf("turn tracks right: M%d %d M%d %d# - sent\n", MOTOR_tracks_RIGHT, displacement, MOTOR_tracks_LEFT, displacement);
+}
+//----------------------------------------------------------------
+void t_tracks_controller::cancel_commands() {
+	wheels_motors_controller.send_move_stepper_motor2(MOTOR_tracks_LEFT, 0, MOTOR_tracks_RIGHT, 0);
+	wheels_motors_controller.set_stepper_motor_state(MOTOR_tracks_LEFT, COMMAND_SENT);
+	wheels_motors_controller.set_stepper_motor_state(MOTOR_tracks_RIGHT, COMMAND_SENT);
+	printf("cancel tracks commands: M%d %d M%d %d# - sent\n", MOTOR_tracks_LEFT, 0, MOTOR_tracks_RIGHT, 0);
 }
 //----------------------------------------------------------------
 t_tracks_controller::~t_tracks_controller(void) {
